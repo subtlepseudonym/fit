@@ -6,10 +6,25 @@ from fitparse import FitFile
 from datetime import datetime
 
 
+file_type_unknown = 'unknown'
 file_type_monitoring = 'monitoring_b'
 file_type_activity = 'activity'
-file_type_tracking = 'tracking'
-tracking_activity_name = 'All-Day Tracking'
+
+activity_type_bike = 'Bike'
+activity_type_cooldown = 'Cooldown'
+activity_type_strength = 'Strength'
+activity_type_tracking = 'All-Day Tracking'
+activity_type_walk = 'Walk'
+
+
+data_type_dict = {
+    file_type_monitoring:   'monitor',
+    activity_type_bike:     'cycle',
+    activity_type_cooldown: 'cooldown',
+    activity_type_tracking: 'track',
+    activity_type_strength: 'lift',
+    activity_type_walk:     'walk'
+}
 
 
 def get_file_type(messages) -> str:
@@ -17,13 +32,28 @@ def get_file_type(messages) -> str:
         if msg.name == 'file_id' and msg.get_value('type'):
             return msg.get_value('type')
 
+    return file_type_unknown
 
-# is_tracking_activity is used to modify file type in the case
-# that the data represents an activity exclusively for tracking
-def is_tracking_activity(messages) -> bool:
+
+def get_activity_type(messages) -> str:
     for msg in messages:
         if msg.name == 'sport' and msg.get_value('name'):
-            return msg.get_value('name') == tracking_activity_name
+            return msg.get_value('name')
+
+    return file_type_unknown
+
+
+# get_data_type provides a friendly name for the type of fit data
+def get_data_type(messages) -> str:
+    file_type = get_file_type(messages)
+    if file_type in data_type_dict:
+        return data_type_dict[file_type]
+
+    activity_type = get_activity_type(messages)
+    if activity_type in data_type_dict:
+        return data_type_dict[activity_type]
+
+    return file_type_unknown
 
 
 def get_base_timestamp(file_type, messages) -> datetime:
