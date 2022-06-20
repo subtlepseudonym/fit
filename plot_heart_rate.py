@@ -28,8 +28,8 @@ for name in sys.argv[1:]:
     #type = name.split('/')[0]
     f = FitFile(name)
     type = heart_rate.get_file_type(f)
-    if type == heart_rate.file_type_activity and heart_rate.is_tracking_activity(f):
-        type = heart_rate.file_type_tracking
+    if type == heart_rate.file_type_activity:
+        type = heart_rate.get_activity_type(f)
 
     record = heart_rate.get_heart_rate(f)
     print(type + " - " + name)
