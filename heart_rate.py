@@ -7,7 +7,9 @@ from datetime import datetime
 
 
 file_type_unknown = 'unknown'
-file_type_monitoring = 'monitoring_b'
+file_type_monitoring_a = 'monitoring_a'
+file_type_monitoring_b = 'monitoring_b'
+file_type_monitoring_daily = 'monitoring_daily'
 file_type_activity = 'activity'
 
 activity_type_bike = 'Bike'
@@ -18,12 +20,14 @@ activity_type_walk = 'Walk'
 
 
 data_type_dict = {
-    file_type_monitoring:   'monitor',
-    activity_type_bike:     'cycle',
-    activity_type_cooldown: 'cooldown',
-    activity_type_tracking: 'track',
-    activity_type_strength: 'lift',
-    activity_type_walk:     'walk'
+    file_type_monitoring_a:     'monitor',
+    file_type_monitoring_b:     'monitor',
+    file_type_monitoring_daily: 'monitor',
+    activity_type_bike:         'cycle',
+    activity_type_cooldown:     'cooldown',
+    activity_type_tracking:     'track',
+    activity_type_strength:     'lift',
+    activity_type_walk:         'walk'
 }
 
 
