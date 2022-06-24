@@ -3,6 +3,11 @@
 GARMIN_MOUNT_PATH="$1"
 DESTINATION_PATH="$2"
 
+if [[ 0 >= "$(ls "${GARMIN_MOUNT_PATH}" | wc -l)" ]]; then
+	echo "no files to import"
+	exit 0
+fi
+
 /usr/bin/rsync \
 	--stats \
 	--info=name1 \
