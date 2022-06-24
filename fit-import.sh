@@ -8,6 +8,8 @@ DESTINATION_PATH="$2"
 	--info=name1 \
 	--no-perms \
 	--chmod=-x \
+	--owner \
+	--group \
 	--chown=1000:1000 \
 	${GARMIN_MOUNT_PATH}/GARMIN/Activity/*.fit \
 	"${DESTINATION_PATH}/activity"
