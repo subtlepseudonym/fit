@@ -23,6 +23,6 @@ for f in $(find "${GARMIN_MOUNT_PATH}/GARMIN/Activity/" -type f -name '*.fit'); 
 	type="$(fit_type --data ${f})"
 	if [[ "${type}" == "track" ]]; then
 		echo "removing ${f}"
-		#rm $f
+		rm $f
 	fi
 done
