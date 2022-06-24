@@ -3,6 +3,17 @@
 GARMIN_MOUNT_PATH="$1"
 DESTINATION_PATH="$2"
 
+max_retries=60
+retries=0
+while ! mountpoint --quiet "${GARMIN_MOUNT_PATH}"; do
+	retries=$(( $retries + 1 ))
+	if [[ ${retries} > ${max_retries} ]]; then
+		>&2 echo "max retry attempts exceeded waiting for mountpoint"
+		exit 1
+	fi
+	sleep 1
+done
+
 if [[ 0 >= "$(ls "${GARMIN_MOUNT_PATH}" | wc -l)" ]]; then
 	echo "no files to import"
 	exit 0
