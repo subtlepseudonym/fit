@@ -3,7 +3,15 @@
 GARMIN_MOUNT_PATH="$1"
 DESTINATION_PATH="$2"
 
-/usr/bin/rsync --no-perms --chmod=-x --info=name1 --stats ${GARMIN_MOUNT_PATH}/GARMIN/Activity/*.fit "${DESTINATION_PATH}/activity"
+/usr/bin/rsync \
+	--stats \
+	--info=name1 \
+	--no-perms \
+	--chmod=-x \
+	--chown=1000:1000 \
+	${GARMIN_MOUNT_PATH}/GARMIN/Activity/*.fit \
+	"${DESTINATION_PATH}/activity"
+
 if [ $? != 0 ]; then
 	>&2 echo "rsync failed"
 	exit 1
