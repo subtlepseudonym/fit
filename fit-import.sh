@@ -14,7 +14,7 @@ while ! mountpoint --quiet "${GARMIN_MOUNT_PATH}"; do
 	sleep 1
 done
 
-if [[ 0 >= "$(ls "${GARMIN_MOUNT_PATH}" | wc -l)" ]]; then
+if [[ 0 -ge "$(ls "${GARMIN_MOUNT_PATH}" | wc -l)" ]]; then
 	echo "no files on mount path"
 	exit 0
 fi
