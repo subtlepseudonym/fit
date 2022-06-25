@@ -29,8 +29,8 @@ import () {
 		--owner \
 		--group \
 		--chown=1000:1000 \
-		"$1" \
-		"$2"
+		$1 \
+		$2
 
 	if [ $? != 0 ]; then
 		>&2 echo "rsync failed"
@@ -40,8 +40,8 @@ import () {
 }
 
 # import fit files
-import ${GARMIN_MOUNT_PATH}/GARMIN/Activity/*.fit "${DESTINATION_PATH}/activity"
-import ${GARMIN_MOUNT_PATH}/GARMIN/Monitor/*.FIT "${DESTINATION_PATH}/monitor"
+import "${GARMIN_MOUNT_PATH}/GARMIN/Activity/*.fit" "${DESTINATION_PATH}/activity"
+import "${GARMIN_MOUNT_PATH}/GARMIN/Monitor/*.FIT" "${DESTINATION_PATH}/monitor"
 
 # remove tracking files from device
 for f in $(find "${GARMIN_MOUNT_PATH}/GARMIN/Activity/" -type f -name '*.fit'); do
