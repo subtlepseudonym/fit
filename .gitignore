@@ -1,6 +1,8 @@
 __pycache__/
 dist/
 build/
+secret/
 
 out.csv
 *.spec
+tmp
