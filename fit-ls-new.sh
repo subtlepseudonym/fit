@@ -7,7 +7,7 @@ fi
 SOURCE="${1}"
 SINCE="${2}"
 
-since_unix="$(date -d ${SINCE} +%s)"
+since_unix="$(date -d "${SINCE}" +%s)"
 for f in $(find "${SOURCE}" -type f -name '*.fit' | sort); do
 	file_date="$(date -d "$(basename "${f}" | cut -d- -f1,2,3)" +%s)"
 	if [[ "${since_unix}" -gt "${file_date}" ]]; then
