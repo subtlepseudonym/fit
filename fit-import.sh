@@ -24,6 +24,7 @@ import () {
 	/usr/bin/rsync \
 		--stats \
 		--info=name1 \
+		--checksum \
 		--no-perms \
 		--chmod=-x \
 		--owner \
