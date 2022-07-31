@@ -1,9 +1,10 @@
 __pycache__/
-dist/
 build/
+dist/
 secret/
+vendor/
 
-out.csv
-out.line
+*.line
 *.spec
+out.csv
 tmp
