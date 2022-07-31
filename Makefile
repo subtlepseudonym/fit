@@ -1,7 +1,7 @@
 default: build
 
 build:
-	mkdir dist/
+	mkdir --parents dist/
 	pyinstaller --onefile fit_type.py
 	pyinstaller --onefile track_to_line.py
 	go build -o dist/fit main.go
