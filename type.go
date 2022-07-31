@@ -3,82 +3,164 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
+	"strings"
 
-	"github.com/tormoder/fit"
+	"github.com/influxdata/line-protocol/v2/lineprotocol"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/subtlepseudonym/fit-go"
 )
 
 const (
-	TypeMonitoring = "monitor"
-	TypeCycling    = "cycle"
+	defaultDeviceValue = "unknown"
+
 	TypeCooldown   = "cooldown"
-	TypeTracking   = "track"
+	TypeCycling    = "cycle"
+	TypeMonitoring = "monitor"
 	TypeStrength   = "strength"
+	TypeTracking   = "track"
 	TypeWalk       = "walk"
+
+	SportBike     = "Bike"
+	SportCooldown = "Cooldown"
+	SportStrength = "Strength"
+	SportTracking = "All-Day Tracking"
+	SportWalk     = "Walk"
 )
 
+var device string
+
+var sportToType map[string]string = map[string]string{
+	SportBike:     TypeCycling,
+	SportCooldown: TypeCooldown,
+	SportStrength: TypeStrength,
+	SportTracking: TypeTracking,
+	SportWalk:     TypeWalk,
+}
+
 func main() {
-	var files []*os.File
-	for _, arg := range os.Args[1:] {
-		f, err := os.Open(arg)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "open: %s", err)
-			os.Exit(1)
-		}
-		files = append(files, f)
+	root := &cobra.Command{
+		Use:   "fit",
+		Short: "Interrogate and manipulate fit files",
 	}
 
-	for _, f := range files {
-		data, err := fit.Decode(f, fit.WithUnknownFields())
+	lineCmd := &cobra.Command{
+		Use:   "line",
+		Short: "Convert fit file to influx line protocol",
+		RunE:  line,
+	}
+	lineCmd.Flags().StringVar(&device, "device", defaultDeviceValue, "Telemetry device name")
+
+	root.AddCommand(lineCmd)
+	root.AddCommand(&cobra.Command{
+		Use:   "type",
+		Short: "Display fit file type information",
+		RunE:  fitType,
+	})
+
+	pflag.Parse()
+	if err := root.Execute(); err != nil {
+		fmt.Printf("ERR: %s\n", err)
+	}
+}
+
+func fitType(cmd *cobra.Command, args []string) error {
+	for _, arg := range args {
+		f, err := os.Open(arg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "fit decode: %s: %s", f.Name(), err)
-			continue
+			return fmt.Errorf("open: %w", err)
+		}
+
+		data, err := fit.Decode(f)
+		if err != nil {
+			return fmt.Errorf("decode: %w", err)
 		}
 
 		switch data.Type() {
 		case fit.FileTypeActivity:
 			activity, err := data.Activity()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "fit activity: %s: %s", f.Name(), err)
-				continue
+				return fmt.Errorf("activity: %w", err)
 			}
-
-			fmt.Fprintf(os.Stdout, "activity: %v\n", activity.Activity)
-			session := activity.Sessions[0]
-			if session.Sport != fit.SportGeneric {
-				fmt.Fprintf(os.Stdout, "%#v\n", data.UnknownFields)
-			}
-		case fit.FileTypeMonitoringA:
-			monitor, err := data.MonitoringA()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "fit monitoring a: %s: %s", f.Name(), err)
-				continue
-			}
-
-			fmt.Fprintf(os.Stdout, "monitor a: %v\n", monitor.MonitoringInfo)
-		case fit.FileTypeMonitoringB:
-			monitor, err := data.MonitoringB()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "fit monitoring b: %s: %s", f.Name(), err)
-				continue
-			}
-
-			fmt.Fprintf(os.Stdout, "monitor b: %v\n", monitor.MonitoringInfo)
-		case fit.FileTypeMonitoringDaily:
-			monitor, err := data.MonitoringDaily()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "fit monitoring daily: %s: %s", f.Name(), err)
-				continue
-			}
-
-			fmt.Fprintf(os.Stdout, "monitor daily: %v\n", monitor.MonitoringInfo)
+			fmt.Println(sportToType[activity.Sport.Name])
 		case fit.FileTypeSport:
 			sport, err := data.Sport()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "fit sport: %s: %s", f.Name(), err)
-				continue
+				return fmt.Errorf("sport: %w", err)
 			}
-
-			fmt.Fprintf(os.Stdout, "sport: %v", sport.Sport)
+			fmt.Println(sportToType[sport.Sport.Name])
+		case fit.FileTypeMonitoringA, fit.FileTypeMonitoringB, fit.FileTypeMonitoringDaily:
+			fmt.Println(TypeMonitoring)
 		}
 	}
+
+	return nil
+}
+
+func line(cmd *cobra.Command, args []string) error {
+	for _, arg := range args {
+		fitFile, err := os.Open(arg)
+		if err != nil {
+			return fmt.Errorf("open: %w", err)
+		}
+		defer fitFile.Close()
+
+		data, err := fit.Decode(fitFile)
+		if err != nil {
+			return fmt.Errorf("decode: %w", err)
+		}
+
+		switch data.Type() {
+		case fit.FileTypeActivity:
+			activity, err := data.Activity()
+			if err != nil {
+				return fmt.Errorf("activity: %w", err)
+			}
+
+			lineFile := fmt.Sprintf("%s.line", strings.TrimSuffix(path.Base(fitFile.Name()), path.Ext(fitFile.Name())))
+			output, err := os.Create(lineFile)
+			if err != nil {
+				return fmt.Errorf("open: %w", err)
+			}
+			defer output.Close()
+
+			fitType := sportToType[activity.Sport.Name]
+
+			var encoder lineprotocol.Encoder
+			for _, record := range activity.Records {
+				encoder.SetPrecision(lineprotocol.Second)
+				encoder.StartLine(fitType)
+				encoder.AddTag("device", device)
+
+				encoder.AddField("heart_rate", lineprotocol.UintValue(uint64(record.HeartRate)))
+				encoder.AddField("enhanced_altitude", lineprotocol.UintValue(uint64(record.EnhancedAltitude)))
+				encoder.AddField("temperature", lineprotocol.IntValue(int64(record.Temperature)))
+
+				if activity.Sport.Sport == fit.SportCycling {
+					if latitude, ok := lineprotocol.FloatValue(record.PositionLat.Degrees()); ok {
+						encoder.AddField("latitude", latitude)
+					}
+					if longitude, ok := lineprotocol.FloatValue(record.PositionLong.Degrees()); ok {
+						encoder.AddField("longitude", longitude)
+					}
+					encoder.AddField("distance", lineprotocol.UintValue(uint64(record.Distance)))
+					encoder.AddField("cadence", lineprotocol.UintValue(uint64(record.Cadence)))
+					encoder.AddField("enhanced_speed", lineprotocol.UintValue(uint64(record.EnhancedSpeed)))
+				}
+
+				encoder.EndLine(record.Timestamp)
+				if err = encoder.Err(); err != nil {
+					return fmt.Errorf("encoder: %w", err)
+				}
+			}
+
+			_, err = output.Write(encoder.Bytes())
+			if err != nil {
+				return fmt.Errorf("write: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
