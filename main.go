@@ -8,7 +8,6 @@ import (
 
 	"github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/subtlepseudonym/fit-go"
 )
 
@@ -59,7 +58,6 @@ func main() {
 		RunE:  fitType,
 	})
 
-	pflag.Parse()
 	if err := root.Execute(); err != nil {
 		fmt.Printf("ERR: %s\n", err)
 	}
