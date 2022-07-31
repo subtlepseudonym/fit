@@ -4,5 +4,6 @@ build/
 secret/
 
 out.csv
+out.line
 *.spec
 tmp
