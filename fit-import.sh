@@ -46,7 +46,7 @@ import "${GARMIN_MOUNT_PATH}/GARMIN/Monitor/*.FIT" "${DESTINATION_PATH}/monitor"
 
 # remove tracking files from device
 for f in $(find "${GARMIN_MOUNT_PATH}/GARMIN/Activity/" -type f -name '*.fit'); do
-	type="$(fit_type --data ${f})"
+	type="$(fit type ${f})"
 	if [[ "${type}" == "track" ]]; then
 		echo "removing ${f}"
 		rm $f
