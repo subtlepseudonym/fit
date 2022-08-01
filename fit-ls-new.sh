@@ -14,7 +14,7 @@ for f in $(find "${SOURCE}" -type f -name '*.fit' | sort); do
 		continue
 	fi
 
-	type="$(fit_type --data ${f})"
+	type="$(fit type ${f})"
 	if [[ "${type}" != "track" ]]; then
 		echo "${f}" "${type}"
 	fi
