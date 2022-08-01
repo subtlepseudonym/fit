@@ -1,5 +1,7 @@
 default: build
 
+bin: build clean
+
 build:
 	mkdir --parents dist/
 	pyinstaller --onefile fit_type.py
@@ -7,7 +9,12 @@ build:
 	go build -o dist/fit main.go
 
 clean:
-	rm -r build/ dist/ __pycache__/ *.spec out.csv out.line
+	rm --recursive --force \
+		*.spec \
+		__pycache__/ \
+		build/ \
+		out.csv \
+		out.line
 	go clean
 
 format fmt:
