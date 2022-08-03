@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -42,6 +43,7 @@ func main() {
 	root := &cobra.Command{
 		Use:   "fit",
 		Short: "Interrogate and manipulate fit files",
+		SilenceUsage: true,
 	}
 
 	lineCmd := &cobra.Command{
@@ -57,10 +59,13 @@ func main() {
 		Short: "Display fit file type information",
 		RunE:  fitType,
 	})
+	root.AddCommand(&cobra.Command{
+		Use: "dump",
+		Short: "Dump file header and ID",
+		RunE: dump,
+	})
 
-	if err := root.Execute(); err != nil {
-		fmt.Printf("ERR: %s\n", err)
-	}
+	root.Execute()
 }
 
 func fitType(cmd *cobra.Command, args []string) error {
@@ -158,6 +163,35 @@ func line(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("write: %w", err)
 			}
 		}
+	}
+
+	return nil
+}
+
+func dump(cmd *cobra.Command, args []string) error {
+	for _, arg := range args {
+		fitFile, err := os.Open(arg)
+		if err != nil {
+			return fmt.Errorf("open: %w", err)
+		}
+		defer fitFile.Close()
+
+		header, fileID, err := fit.DecodeHeaderAndFileID(fitFile)
+		if err != nil {
+			return fmt.Errorf("decode header and file ID: %w", err)
+		}
+
+		b, err := json.Marshal(header)
+		if err != nil {
+			return fmt.Errorf("marshal header: %w", err)
+		}
+		fmt.Println(string(b))
+
+		b, err = json.Marshal(fileID)
+		if err != nil {
+			return fmt.Errorf("marshal file ID message: %w", err)
+		}
+		fmt.Println(string(b))
 	}
 
 	return nil
