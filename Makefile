@@ -27,4 +27,7 @@ format fmt:
 tidy:
 	go mod tidy
 
-.PHONY: all bin build build-go build-python clean tidy
+vendor: tidy
+	go mod vendor
+
+.PHONY: all bin build build-go build-python clean tidy vendor
