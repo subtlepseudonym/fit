@@ -1,12 +1,16 @@
 default: build
 
-bin: build clean
+bin: build-all clean
 
-build:
+build: build-python build-go
+
+build-go: tidy
 	mkdir --parents dist/
-	pyinstaller --onefile fit_type.py
-	pyinstaller --onefile track_to_line.py
 	go build -o dist/fit main.go
+
+build-python:
+	pyinstaller --onefile src/fit_type.py
+	pyinstaller --onefile src/track_to_line.py
 
 clean:
 	rm --recursive --force \
@@ -20,8 +24,7 @@ clean:
 format fmt:
 	gofmt -l -w .
 
-vendor:
+tidy:
 	go mod tidy
-	go mod vendor
 
-.PHONY: all build clean vendor
+.PHONY: all bin build build-go build-python clean tidy
