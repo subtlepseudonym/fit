@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 	"strings"
 
 	"github.com/influxdata/line-protocol/v2/lineprotocol"
@@ -187,7 +188,31 @@ func dump(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println(string(b))
 
-		b, err = json.Marshal(fileID)
+		fid := struct{
+			Type string
+			Manufacturer string
+			Product interface{}
+			SerialNumber uint32
+			TimeCreated time.Time
+			Number uint16
+			ProductName string
+		}{
+			Type: fileID.Type.String(),
+			Manufacturer: fileID.Manufacturer.String(),
+			SerialNumber: fileID.SerialNumber,
+			TimeCreated: fileID.TimeCreated,
+			Number: fileID.Number,
+			ProductName: fileID.ProductName,
+		}
+
+		product := fileID.GetProduct()
+		if p, ok := product.(fit.GarminProduct); ok {
+			fid.Product = p.String()
+		} else {
+			fid.Product = product
+		}
+
+		b, err = json.Marshal(fid)
 		if err != nil {
 			return fmt.Errorf("marshal file ID message: %w", err)
 		}
