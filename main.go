@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/spf13/cobra"
@@ -42,8 +42,8 @@ var sportToType map[string]string = map[string]string{
 
 func main() {
 	root := &cobra.Command{
-		Use:   "fit",
-		Short: "Interrogate and manipulate fit files",
+		Use:          "fit",
+		Short:        "Interrogate and manipulate fit files",
 		SilenceUsage: true,
 	}
 
@@ -61,9 +61,9 @@ func main() {
 		RunE:  fitType,
 	})
 	root.AddCommand(&cobra.Command{
-		Use: "dump",
+		Use:   "dump",
 		Short: "Dump file header and ID",
-		RunE: dump,
+		RunE:  dump,
 	})
 
 	root.Execute()
@@ -188,21 +188,21 @@ func dump(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println(string(b))
 
-		fid := struct{
-			Type string
+		fid := struct {
+			Type         string
 			Manufacturer string
-			Product interface{}
+			Product      interface{}
 			SerialNumber uint32
-			TimeCreated time.Time
-			Number uint16
-			ProductName string
+			TimeCreated  time.Time
+			Number       uint16
+			ProductName  string
 		}{
-			Type: fileID.Type.String(),
+			Type:         fileID.Type.String(),
 			Manufacturer: fileID.Manufacturer.String(),
 			SerialNumber: fileID.SerialNumber,
-			TimeCreated: fileID.TimeCreated,
-			Number: fileID.Number,
-			ProductName: fileID.ProductName,
+			TimeCreated:  fileID.TimeCreated,
+			Number:       fileID.Number,
+			ProductName:  fileID.ProductName,
 		}
 
 		product := fileID.GetProduct()
