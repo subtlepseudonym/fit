@@ -66,7 +66,10 @@ func main() {
 		RunE:  dump,
 	})
 
-	root.Execute()
+	err := root.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 func fitType(cmd *cobra.Command, args []string) error {
