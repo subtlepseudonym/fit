@@ -15,30 +15,35 @@ import (
 
 const (
 	defaultDeviceValue = "unknown"
-
-	TypeCooldown   = "cooldown"
-	TypeCycling    = "cycle"
-	TypeMonitoring = "monitor"
-	TypeStrength   = "strength"
-	TypeTracking   = "track"
-	TypeWalk       = "walk"
-
-	SportBike     = "Bike"
-	SportCooldown = "Cooldown"
-	SportStrength = "Strength"
-	SportTracking = "All-Day Tracking"
-	SportWalk     = "Walk"
+	typeMonitoring     = "monitor" // only non-sport type
 )
 
-var device string
-
+// Use Sport.Name mapping to capture custom activities
 var sportToType map[string]string = map[string]string{
-	SportBike:     TypeCycling,
-	SportCooldown: TypeCooldown,
-	SportStrength: TypeStrength,
-	SportTracking: TypeTracking,
-	SportWalk:     TypeWalk,
+	"All-Day Tracking":  "track",
+	"American Football": "football",
+	"Basketball":        "basketball",
+	"Bike":              "cycle",
+	"Cooldown":          "cooldown",
+	"Hike":              "hike",
+	"Ice Skate":         "iceskate",
+	"Kayak":             "kayak",
+	"MTB":               "mountain",
+	"Open Water":        "openwater",
+	"Pool Swim":         "swim",
+	"Run":               "run",
+	"SUP":               "paddleboard",
+	"Ski":               "ski",
+	"Snowboard":         "snowboard",
+	"Soccer":            "soccer",
+	"Strength":          "strength",
+	"Tennis":            "tennis",
+	"Treadmill":         "treadmill",
+	"Walk":              "walk",
+	"Yoga":              "yoga",
 }
+
+var device string
 
 func main() {
 	root := &cobra.Command{
@@ -98,7 +103,7 @@ func fitType(cmd *cobra.Command, args []string) error {
 			}
 			fmt.Println(sportToType[sport.Sport.Name])
 		case fit.FileTypeMonitoringA, fit.FileTypeMonitoringB, fit.FileTypeMonitoringDaily:
-			fmt.Println(TypeMonitoring)
+			fmt.Println(typeMonitoring)
 		}
 	}
 
