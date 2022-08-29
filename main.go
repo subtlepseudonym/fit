@@ -15,6 +15,7 @@ import (
 
 const (
 	defaultDeviceValue = "unknown"
+	typeUnknown        = "unknown"
 	typeMonitoring     = "monitor" // only non-sport type
 )
 
@@ -95,13 +96,21 @@ func fitType(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return fmt.Errorf("activity: %w", err)
 			}
-			fmt.Println(sportToType[activity.Sport.Name])
+			if t, ok := sportToType[activity.Sport.Name]; ok {
+				fmt.Println(t)
+			} else {
+				fmt.Println(typeUnknown)
+			}
 		case fit.FileTypeSport:
 			sport, err := data.Sport()
 			if err != nil {
 				return fmt.Errorf("sport: %w", err)
 			}
-			fmt.Println(sportToType[sport.Sport.Name])
+			if t, ok := sportToType[activity.Sport.Name]; ok {
+				fmt.Println(t)
+			} else {
+				fmt.Println(typeUnknown)
+			}
 		case fit.FileTypeMonitoringA, fit.FileTypeMonitoringB, fit.FileTypeMonitoringDaily:
 			fmt.Println(typeMonitoring)
 		}
