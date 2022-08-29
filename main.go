@@ -146,7 +146,10 @@ func line(cmd *cobra.Command, args []string) error {
 			}
 			defer output.Close()
 
-			fitType := sportToType[activity.Sport.Name]
+			fitType := typeUnknown
+			if t, ok := sportToType[activity.Sport.Name]; ok {
+				fitType = t
+			}
 
 			var encoder lineprotocol.Encoder
 			for _, record := range activity.Records {
