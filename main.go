@@ -106,7 +106,7 @@ func fitType(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return fmt.Errorf("sport: %w", err)
 			}
-			if t, ok := sportToType[activity.Sport.Name]; ok {
+			if t, ok := sportToType[sport.Sport.Name]; ok {
 				fmt.Println(t)
 			} else {
 				fmt.Println(typeUnknown)
