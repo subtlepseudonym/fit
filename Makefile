@@ -5,7 +5,7 @@ bin: build-all clean
 build: build-python build-go
 
 build-go: tidy
-	mkdir --parents dist/
+	mkdir -p dist/
 	go build -o dist/fit main.go
 
 build-python:
