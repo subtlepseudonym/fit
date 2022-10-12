@@ -1,3 +1,14 @@
+BUILD=$$( \
+	if command -v vtag &>/dev/null; then \
+		vtag; \
+	else \
+		printf \
+			'0.0.1-unknown+%s' \
+			"$$(git rev-list -n1 HEAD | head -c7)"; \
+	fi \
+)
+LDFLAGS=--ldflags "-X main.Version=${BUILD}"
+
 default: build
 
 bin: build-all clean
@@ -5,8 +16,8 @@ bin: build-all clean
 build: build-python build-go
 
 build-go: tidy
-	mkdir --parents dist/
-	go build -o dist/fit main.go
+	mkdir -p dist/
+	go build ${LDFLAGS} -o dist/fit main.go
 
 build-python:
 	pyinstaller --onefile src/fit_type.py

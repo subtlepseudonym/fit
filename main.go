@@ -44,12 +44,16 @@ var sportToType map[string]string = map[string]string{
 	"Yoga":              "yoga",
 }
 
-var device string
+var (
+	Version string // value set at build time
+	device  string
+)
 
 func main() {
 	root := &cobra.Command{
 		Use:          "fit",
 		Short:        "Interrogate and manipulate fit files",
+		Version:      Version,
 		SilenceUsage: true,
 	}
 
