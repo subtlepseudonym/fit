@@ -40,15 +40,3 @@ import () {
 	fi
 	echo
 }
-
-remove_track_files () {
-	local file_path="$1"
-	echo "removing track files"
-	for f in $(find "${file_path}" -type f -name '*.fit'); do
-		type="$(fit type ${f})"
-		if [[ "${type}" == "track" ]]; then
-			rm $f
-			echo "${f}"
-		fi
-	done
-}
