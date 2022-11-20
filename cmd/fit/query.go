@@ -11,6 +11,106 @@ import (
 	"github.com/scru128/go-scru128"
 )
 
+const setupQueryFormat = `
+CREATE FUNCTION trigger_set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+	NEW.updated_at = NOW();
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE %s
+(
+	id varchar(64) PRIMARY KEY,
+	hash bigint UNIQUE NOT NULL,
+	created_at timestamptz NOT NULL DEFAULT NOW(),
+	updated_at timestamptz NOT NULL DEFAULT NOW(),
+	type varchar(64),
+	start_time timestamptz,
+	end_time timestamptz,
+	max_distance_from_start numeric(64, 32),
+	tags jsonb
+);
+
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON %s
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_updated_at();
+
+CREATE INDEX ON %s (start_time);
+
+CREATE TABLE %s
+(
+	id varchar(64) PRIMARY KEY,
+	created_at timestamptz NOT NULL DEFAULT NOW(),
+	updated_at timestamptz NOT NULL DEFAULT NOW(),
+	activity_id varchar(64) NOT NULL REFERENCES %s(id)
+		ON DELETE RESTRICT
+		ON UPDATE RESTRICT,
+	name varchar(64) NOT NULL,
+	unit varchar(64),
+	maximum numeric(64, 32),
+	minimum numeric(64, 32),
+	median numeric(64, 32),
+	mean numeric(64, 32),
+	variance numeric(64, 32),
+	standard_deviation numeric(64, 32),
+	UNIQUE (activity_id, name)
+);
+
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON %s
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_updated_at();
+
+CREATE TABLE %s
+(
+	id varchar(64) PRIMARY KEY,
+	created_at timestamptz NOT NULL DEFAULT NOW(),
+	updated_at timestamptz NOT NULL DEFAULT NOW(),
+	activity_id varchar(64) NOT NULL REFERENCES %s(id)
+		ON DELETE RESTRICT
+		ON UPDATE RESTRICT,
+	measurement_a varchar(64) NOT NULL,
+	measurement_b varchar(64) NOT NULL,
+	correlation numeric(32, 30),
+	FOREIGN KEY (activity_id, measurement_a)
+		REFERENCES %s(activity_id, name),
+	FOREIGN KEY (activity_id, measurement_b)
+		REFERENCES %s(activity_id, name)
+);
+
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON %s
+FOR EACH ROW
+EXECUTE PROCEDURE trigger_set_updated_at();
+
+CREATE UNIQUE INDEX %s_measurement_combination_idx ON %s(
+	greatest(measurement_a, measurement_b),
+	least(measurement_a, measurement_b)
+);
+`
+
+func buildSetupQuery(activityTable, measurementTable, correlationTable string) string {
+	return fmt.Sprintf(
+		setupQueryFormat,
+		activityTable,
+		activityTable,
+		activityTable,
+		measurementTable,
+		activityTable,
+		measurementTable,
+		correlationTable,
+		activityTable,
+		measurementTable,
+		measurementTable,
+		correlationTable,
+		correlationTable,
+		correlationTable,
+	)
+}
+
 const insertActivityFormat = `
 INSERT INTO %s
 (

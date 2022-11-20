@@ -23,9 +23,10 @@ func NewETLCommand() *cobra.Command {
 		RunE:  etl,
 	}
 
-	flags := cmd.Flags()
-	flags.String("device", DefaultDevice, "Telemetry device name")
+	// non-persistent
+	cmd.Flags().String("device", DefaultDevice, "Telemetry device name")
 
+	flags := cmd.PersistentFlags()
 	flags.String("postgres", "", "Postgres DSN")
 	flags.String("postgres_activity_table", "activity", "Postgres table")
 	flags.String("postgres_measurement_table", "measurement", "Postgres table")
@@ -35,9 +36,11 @@ func NewETLCommand() *cobra.Command {
 	flags.String("influx_org", "default", "InfluxDB organization")
 	flags.String("influx_bucket", "fit", "InfluxDB bucket")
 
-	cmd.MarkFlagRequired("postgres")
-	cmd.MarkFlagRequired("influx_host")
-	cmd.MarkFlagRequired("influx_token")
+	cobra.MarkFlagRequired(flags, "postgres")
+	cobra.MarkFlagRequired(flags, "influx_host")
+	cobra.MarkFlagRequired(flags, "influx_token")
+
+	cmd.AddCommand(NewETLSetupCommand())
 
 	return cmd
 }
