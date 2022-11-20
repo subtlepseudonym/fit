@@ -1,5 +1,5 @@
 BUILD=$$( \
-	if command -v vtag &>/dev/null; then \
+	if command -v vtag 1>/dev/null 2>&1; then \
 		vtag; \
 	else \
 		printf \
@@ -11,13 +11,13 @@ LDFLAGS=--ldflags "-X main.Version=${BUILD}"
 
 default: build
 
-bin: build-all clean
+bin: clean build
 
 build: build-python build-go
 
 build-go: tidy
 	mkdir -p dist/
-	go build ${LDFLAGS} -o dist/fit main.go
+	go build ${LDFLAGS} -o dist/fit -v ./cmd/fit
 
 build-python:
 	pyinstaller --onefile src/fit_type.py
