@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -13,59 +12,9 @@ import (
 
 	"github.com/influxdata/influxdb-client-go/v2"
 	_ "github.com/lib/pq"
-	"github.com/mitchellh/hashstructure"
-	"github.com/scru128/go-scru128"
 	"github.com/spf13/cobra"
 	fit "github.com/subtlepseudonym/fit-go"
 )
-
-const insertActivityFormat = `
-INSERT INTO %s
-(
-	id,
-	hash,
-	type,
-	start_time,
-	end_time,
-	max_distance_from_start,
-	tags
-) VALUES (
-	'%s', %d, '%s', '%s', '%s',
-	%f, '%s'
-);
-`
-
-const insertMeasurementFormat = `
-INSERT INTO %s
-(
-	id,
-	activity_id,
-	name,
-	unit,
-	maximum,
-	minimum,
-	median,
-	mean,
-	variance,
-	standard_deviation
-) VALUES (
-	'%s', '%s', '%s', '%s',
-	%f, %f, %f, %f, %f, %f
-);
-`
-
-const insertCorrelationFormat = `
-INSERT INTO %s
-(
-	id,
-	activity_id,
-	measurement_a,
-	measurement_b,
-	correlation
-) VALUES (
-	'%s', '%s', '%s', '%s', %f
-);
-`
 
 func NewETLCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -121,6 +70,7 @@ func etl(cmd *cobra.Command, args []string) (ret error) {
 		activityTable, _ := flags.GetString("postgres_activity_table")
 		measurementTable, _ := flags.GetString("postgres_measurement_table")
 		correlationTable, _ := flags.GetString("postgres_correlation_table")
+
 		db, err := sql.Open("postgres", postgresDSN)
 		if err != nil {
 			return fmt.Errorf("sql open: %w", err)
@@ -130,16 +80,6 @@ func etl(cmd *cobra.Command, args []string) (ret error) {
 		summary, err := fitcmd.Summarize(data, tags)
 		if err != nil {
 			return fmt.Errorf("summarize: %w", err)
-		}
-
-		summaryHash, err := hashstructure.Hash(summary, nil)
-		if err != nil {
-			return fmt.Errorf("hash summary: %w", err)
-		}
-
-		queries, err := buildInsertQueries(activityTable, measurementTable, correlationTable, summary, int64(summaryHash))
-		if err != nil {
-			return fmt.Errorf("build insert query: %w", err)
 		}
 
 		tx, err := db.Begin()
@@ -155,21 +95,26 @@ func etl(cmd *cobra.Command, args []string) (ret error) {
 			}
 		}()
 
-		var count int
-		hashQuery := fmt.Sprintf("SELECT count(*) FROM %s WHERE hash = %d", activityTable, int64(summaryHash))
-		err = tx.QueryRow(hashQuery).Scan(&count)
+		activityQuery, err := buildActivityQuery(activityTable, summary)
 		if err != nil {
-			return fmt.Errorf("hash existence query: %w", err)
+			return fmt.Errorf("build activity query: %w", err)
 		}
 
-		if count != 0 {
-			return fmt.Errorf("summary hash should be unique: found %d existing records", count)
+		var activityID string
+		err = tx.QueryRow(activityQuery).Scan(&activityID)
+		if err != nil {
+			return fmt.Errorf("insert activity: %w", err)
+		}
+
+		queries, err := buildQueries(measurementTable, correlationTable, activityID, summary)
+		if err != nil {
+			return fmt.Errorf("build measurement and correlation queries: %w", err)
 		}
 
 		for _, query := range queries {
 			_, err = tx.Exec(query)
 			if err != nil {
-				return fmt.Errorf("sql insert: %w", err)
+				return fmt.Errorf("insert query: %w", err)
 			}
 		}
 
@@ -204,82 +149,4 @@ func etl(cmd *cobra.Command, args []string) (ret error) {
 	}
 
 	return nil
-}
-
-func buildInsertQueries(activityTable, measurementTable, correlationTable string, summary *fitcmd.Summary, summaryHash int64) ([]string, error) {
-	scruGenerator := scru128.NewGenerator()
-	activityID, err := scruGenerator.Generate()
-	if err != nil {
-		return nil, fmt.Errorf("generate activity ID: %w", err)
-	}
-
-	tags, err := json.Marshal(summary.Tags)
-	if err != nil {
-		return nil, fmt.Errorf("marshal json tags: %w", err)
-	}
-
-	queries := make([]string, 0, 1+len(summary.Measurements)+len(summary.Correlations))
-	queries = append(queries, fmt.Sprintf(
-		insertActivityFormat,
-		activityTable,
-		activityID,
-		summaryHash,
-		summary.Type,
-		summary.StartTime.Format(time.RFC3339),
-		summary.EndTime.Format(time.RFC3339),
-		summary.MaxDistanceFromStart,
-		tags,
-	))
-
-	measurementIDs := make(map[string]string)
-	for _, m := range summary.Measurements {
-		id, err := scruGenerator.Generate()
-		if err != nil {
-			return nil, fmt.Errorf("measurement generate scru ID: %w", err)
-		}
-
-		measurementIDs[m.Name] = id.String()
-		queries = append(queries, fmt.Sprintf(
-			insertMeasurementFormat,
-			measurementTable,
-			id,
-			activityID,
-			m.Name,
-			m.Unit,
-			m.Maximum,
-			m.Minimum,
-			m.Median,
-			m.Mean,
-			m.Variance,
-			m.StandardDeviation,
-		))
-	}
-
-	for _, c := range summary.Correlations {
-		measurementA, ok := measurementIDs[c.MeasurementA]
-		if !ok {
-			return nil, fmt.Errorf("get measurement ID for name %q", c.MeasurementA)
-		}
-		measurementB, ok := measurementIDs[c.MeasurementB]
-		if !ok {
-			return nil, fmt.Errorf("get measurement ID for name %q", c.MeasurementA)
-		}
-
-		id, err := scruGenerator.Generate()
-		if err != nil {
-			return nil, fmt.Errorf("measurement generate scru ID: %w", err)
-		}
-
-		queries = append(queries, fmt.Sprintf(
-			insertCorrelationFormat,
-			correlationTable,
-			id,
-			activityID,
-			measurementA,
-			measurementB,
-			c.Correlation,
-		))
-	}
-
-	return queries, nil
 }
