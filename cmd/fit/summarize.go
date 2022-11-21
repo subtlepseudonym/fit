@@ -11,6 +11,12 @@ import (
 	fit "github.com/subtlepseudonym/fit-go"
 )
 
+var DefaultCorrelates = [][2]string{
+	[2]string{"heart_rate", "cadence"},
+	[2]string{"heart_rate", "speed"},
+	[2]string{"cadence", "speed"},
+}
+
 func NewSummarizeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "summarize",
@@ -45,7 +51,7 @@ func summarize(cmd *cobra.Command, args []string) error {
 			"device": device,
 		}
 
-		summary, err := fitcmd.Summarize(data, tags)
+		summary, err := fitcmd.Summarize(data, DefaultCorrelates, tags)
 		if err != nil {
 			return fmt.Errorf("summarize: %w", err)
 		}

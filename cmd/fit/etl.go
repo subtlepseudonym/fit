@@ -80,7 +80,7 @@ func etl(cmd *cobra.Command, args []string) (ret error) {
 		}
 		defer db.Close()
 
-		summary, err := fitcmd.Summarize(data, tags)
+		summary, err := fitcmd.Summarize(data, DefaultCorrelates, tags)
 		if err != nil {
 			return fmt.Errorf("summarize: %w", err)
 		}

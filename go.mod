@@ -10,6 +10,7 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/scru128/go-scru128 v1.0.0
 	github.com/spf13/cobra v1.5.0
+	gonum.org/v1/gonum v0.12.0
 )
 
 require (

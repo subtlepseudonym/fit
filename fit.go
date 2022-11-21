@@ -10,6 +10,7 @@ import (
 	lp "github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/jftuga/geodist"
 	"github.com/subtlepseudonym/fit-go"
+	"gonum.org/v1/gonum/stat"
 )
 
 const (
@@ -141,7 +142,7 @@ func Type(data *fit.File) (string, error) {
 	return "", fmt.Errorf("file type unknown")
 }
 
-func Summarize(data *fit.File, tags map[string]string) (*Summary, error) {
+func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (*Summary, error) {
 	switch data.Type() {
 	case fit.FileTypeActivity:
 		activity, err := data.Activity()
@@ -205,7 +206,7 @@ func Summarize(data *fit.File, tags map[string]string) (*Summary, error) {
 				v.Values = append(v.Values, float64(record.EnhancedSpeed))
 			}
 
-			// don't calculate farthest distance if no distance recorded
+			// don't calculate max distance from start if no distance recorded
 			if i > 60 && start.Lat == 0.0 && start.Lon == 0.0 {
 				continue
 			}
@@ -217,7 +218,7 @@ func Summarize(data *fit.File, tags map[string]string) (*Summary, error) {
 			if math.IsNaN(pos.Lat) || math.IsNaN(pos.Lon) {
 				continue
 			}
-			if i <= 60 && start.Lat == 0.0 && start.Lon == 0.0 {
+			if start.Lat == 0.0 && start.Lon == 0.0 {
 				start = pos
 				continue
 			}
@@ -235,6 +236,25 @@ func Summarize(data *fit.File, tags map[string]string) (*Summary, error) {
 			measurement.Name = key
 			measurement.CalculateStats()
 			summary.Measurements = append(summary.Measurements, measurement)
+		}
+
+		for _, measurements := range correlates {
+			a, aok := m[measurements[0]]
+			b, bok := m[measurements[1]]
+			if !(aok && bok) {
+				fmt.Printf(
+					"WARN: correlate (%q, %q) requests missing measurement(s)\n",
+					measurements[0],
+					measurements[1],
+				)
+				continue
+			}
+
+			summary.Correlations = append(summary.Correlations, &Correlation{
+				MeasurementA: measurements[0],
+				MeasurementB: measurements[1],
+				Correlation:  stat.Correlation(a.Values, b.Values, nil),
+			})
 		}
 
 		return summary, nil
