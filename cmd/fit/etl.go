@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	fitcmd "github.com/subtlepseudonym/fit"
@@ -25,21 +26,23 @@ func NewETLCommand() *cobra.Command {
 	}
 
 	// non-persistent
-	cmd.Flags().String("device", DefaultDevice, "Telemetry device name")
+	flags := cmd.Flags()
+	flags.Bool("verbose", false, "Print additional information")
+	flags.String("device", DefaultDevice, "Telemetry device name")
 
-	flags := cmd.PersistentFlags()
-	flags.String("postgres", "", "Postgres DSN")
-	flags.String("postgres_activity_table", "activity", "Postgres table")
-	flags.String("postgres_measurement_table", "measurement", "Postgres table")
-	flags.String("postgres_correlation_table", "correlation", "Postgres table")
-	flags.String("influx_host", "", "InfluxDB DSN")
-	flags.String("influx_token", "", "InfluxDB API token")
-	flags.String("influx_org", "default", "InfluxDB organization")
-	flags.String("influx_bucket", "fit", "InfluxDB bucket")
+	persistent := cmd.PersistentFlags()
+	persistent.String("postgres", "", "Postgres DSN")
+	persistent.String("postgres_activity_table", "activity", "Postgres table")
+	persistent.String("postgres_measurement_table", "measurement", "Postgres table")
+	persistent.String("postgres_correlation_table", "correlation", "Postgres table")
+	persistent.String("influx_host", "", "InfluxDB DSN")
+	persistent.String("influx_token", "", "InfluxDB API token")
+	persistent.String("influx_org", "default", "InfluxDB organization")
+	persistent.String("influx_bucket", "fit", "InfluxDB bucket")
 
-	cobra.MarkFlagRequired(flags, "postgres")
-	cobra.MarkFlagRequired(flags, "influx_host")
-	cobra.MarkFlagRequired(flags, "influx_token")
+	cobra.MarkFlagRequired(persistent, "postgres")
+	cobra.MarkFlagRequired(persistent, "influx_host")
+	cobra.MarkFlagRequired(persistent, "influx_token")
 
 	cmd.AddCommand(NewETLSetupCommand())
 
@@ -82,6 +85,9 @@ func etlAll(cmd *cobra.Command, args []string) error {
 		err = etl(cmd, db, influxAPI, arg, tags)
 		if err != nil {
 			return fmt.Errorf("etl: %q: %w", arg, err)
+		}
+		if verbose, _ := flags.GetBool("verbose"); verbose {
+			fmt.Println(path.Base(arg))
 		}
 	}
 
