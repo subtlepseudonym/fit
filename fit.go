@@ -172,7 +172,7 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 		m := map[string]*Measurement{
 			"heart_rate":  &Measurement{Unit: "1 / minute"},
 			"altitude":    &Measurement{Unit: "meter"},
-			"temperature": &Measurement{Unit: "degrees Farenheit"},
+			"temperature": &Measurement{Unit: "degrees Celsius"},
 		}
 
 		if activity.Sport.Name != SportTracking {
