@@ -164,12 +164,13 @@ func Summarize(data *fit.File, tags map[string]string) (*Summary, error) {
 			StartTime:    activity.Records[0].Timestamp,
 			EndTime:      activity.Records[numRecords-1].Timestamp,
 			Measurements: make([]*Measurement, 0, 8),
+			Correlations: make([]*Correlation, 0, len(correlates)),
 			Tags:         tags,
 		}
 
 		m := map[string]*Measurement{
 			"heart_rate":  &Measurement{Unit: "1 / minute"},
-			"altitude":    &Measurement{Unit: "centimeter"},
+			"altitude":    &Measurement{Unit: "meter"},
 			"temperature": &Measurement{Unit: "degrees Farenheit"},
 		}
 
@@ -191,7 +192,8 @@ func Summarize(data *fit.File, tags map[string]string) (*Summary, error) {
 				v.Values = append(v.Values, float64(record.Temperature))
 			}
 			if v, ok := m["altitude"]; ok {
-				v.Values = append(v.Values, float64(record.EnhancedAltitude))
+				// altitude value requires scaling
+				v.Values = append(v.Values, float64(record.EnhancedAltitude)/5.0-500.0)
 			}
 			if v, ok := m["distance"]; ok {
 				v.Values = append(v.Values, float64(record.Distance))
