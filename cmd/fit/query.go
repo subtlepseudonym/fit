@@ -87,8 +87,9 @@ FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_updated_at();
 
 CREATE UNIQUE INDEX %s_measurement_combination_idx ON %s(
-	greatest(measurement_a, measurement_b),
-	least(measurement_a, measurement_b)
+	activity_id,
+	GREATEST(measurement_a, measurement_b),
+	LEAST(measurement_a, measurement_b)
 );
 `
 
@@ -201,7 +202,11 @@ INSERT INTO %s
 	correlation
 ) VALUES (
 	'%s', '%s', '%s', '%s', %f
-) ON CONFLICT (activity_id, correlation_measurement_combination_idx)
+) ON CONFLICT (
+	activity_id,
+	GREATEST(measurement_a, measurement_b),
+	LEAST(measurement_a, measurement_b)
+)
 DO UPDATE SET
 	correlation = EXCLUDED.correlation;
 `
