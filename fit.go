@@ -242,11 +242,6 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 			a, aok := m[measurements[0]]
 			b, bok := m[measurements[1]]
 			if !(aok && bok) {
-				fmt.Printf(
-					"WARN: correlate (%q, %q) requests missing measurement(s)\n",
-					measurements[0],
-					measurements[1],
-				)
 				continue
 			}
 
