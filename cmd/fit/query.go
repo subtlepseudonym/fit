@@ -155,7 +155,7 @@ func buildActivityQuery(table string, summary *fitcmd.Summary) (string, error) {
 		insertActivityFormat,
 		table,
 		activityID,
-		summaryHash,
+		int64(summaryHash),
 		summary.Type,
 		summary.StartTime.Format(time.RFC3339),
 		summary.EndTime.Format(time.RFC3339),
