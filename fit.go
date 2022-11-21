@@ -180,8 +180,12 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 		}
 
 		if activity.Sport.Sport == fit.SportCycling {
-			m["cadence"] = &Measurement{Unit: "1 / minute"}
 			m["speed"] = &Measurement{Unit: "centimeter / second"}
+
+			// indicates erroneous mean cadence value of 255
+			if !(len(activity.Sessions) > 0 && activity.Sessions[0].AvgCadence == 255) {
+				m["cadence"] = &Measurement{Unit: "1 / minute"}
+			}
 		}
 
 		start := geodist.Coord{}
@@ -194,7 +198,10 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 			}
 			if v, ok := m["altitude"]; ok {
 				// altitude value requires scaling
-				v.Values = append(v.Values, float64(record.EnhancedAltitude)/5.0-500.0)
+				altitude := record.GetEnhancedAltitudeScaled()
+				if !math.IsNaN(altitude) {
+					v.Values = append(v.Values, altitude)
+				}
 			}
 			if v, ok := m["distance"]; ok {
 				v.Values = append(v.Values, float64(record.Distance))
@@ -241,14 +248,19 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 		for _, measurements := range correlates {
 			a, aok := m[measurements[0]]
 			b, bok := m[measurements[1]]
-			if !(aok && bok) {
+			if !(aok && bok) || len(a.Values) == 0 || len(b.Values) == 0 {
+				continue
+			}
+
+			correlation := stat.Correlation(a.Values, b.Values, nil)
+			if math.IsNaN(correlation) {
 				continue
 			}
 
 			summary.Correlations = append(summary.Correlations, &Correlation{
 				MeasurementA: measurements[0],
 				MeasurementB: measurements[1],
-				Correlation:  stat.Correlation(a.Values, b.Values, nil),
+				Correlation:  correlation,
 			})
 		}
 
