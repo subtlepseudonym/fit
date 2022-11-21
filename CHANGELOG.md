@@ -4,6 +4,7 @@
 ### Added
 - Command 'summarize' for calculating record aggregates
 - Command 'etl' for writing summary to postgres and records to influx
+- Command 'etl setup' for setting up expected databases / schema
 
 ### Changed
 - Reorganized repo into an importable package
