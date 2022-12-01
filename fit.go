@@ -54,9 +54,8 @@ type Summary struct {
 }
 
 type Measurement struct {
-	Name   string    `json:"name"`
-	Unit   string    `json:"unit"`
-	Values []float64 `json:"-"`
+	Name string `json:"name"`
+	Unit string `json:"unit"`
 
 	Maximum           float64 `json:"maximum"`
 	Minimum           float64 `json:"minimum"`
@@ -64,18 +63,26 @@ type Measurement struct {
 	Mean              float64 `json:"mean"`
 	Variance          float64 `json:"variance"`
 	StandardDeviation float64 `json:"standard_deviation"`
+
+	values []float64 `json:"-"`
+	init   uint64    `json:"-"`
 }
 
 func (m *Measurement) CalculateStats() *Measurement {
-	if len(m.Values) < 1 {
+	if len(m.values) < 1 {
 		return m
 	}
 
 	var sum float64
-	m.Maximum = m.Values[0]
-	m.Minimum = m.Values[0]
+	m.Maximum = m.values[0]
+	m.Minimum = m.values[0]
 
-	for _, v := range m.Values {
+	values := make([]float64, 0, len(m.values))
+	for _, v := range m.values {
+		if uint64(v) == m.init {
+			continue
+		}
+
 		sum += v
 		if v > m.Maximum {
 			m.Maximum = v
@@ -83,19 +90,20 @@ func (m *Measurement) CalculateStats() *Measurement {
 		if v < m.Minimum {
 			m.Minimum = v
 		}
+		values = append(values, v)
 	}
 
-	numValues := len(m.Values)
+	numValues := len(values)
 	m.Mean = sum / float64(numValues)
 	if numValues%2 == 0 {
 		// mean of middle two values
-		m.Median = (m.Values[numValues/2-1] + m.Values[numValues/2]) / 2
+		m.Median = (values[numValues/2-1] + values[numValues/2]) / 2
 	} else {
-		m.Median = m.Values[int(math.Floor(float64(numValues)/2))]
+		m.Median = values[int(math.Floor(float64(numValues)/2))]
 	}
 
 	ss, compensation := 0.0, 0.0
-	for _, v := range m.Values {
+	for _, v := range values {
 		deviation := v - m.Mean
 		ss += deviation * deviation
 		compensation += deviation
@@ -169,49 +177,49 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 		}
 
 		m := map[string]*Measurement{
-			"heart_rate":  &Measurement{Unit: "1 / minute"},
-			"altitude":    &Measurement{Unit: "meter"},
-			"temperature": &Measurement{Unit: "degrees Celsius"},
+			"heart_rate":  &Measurement{Unit: "1 / minute", init: 0xFF},
+			"altitude":    &Measurement{Unit: "meter", init: 0xFFFFFFFF},
+			"temperature": &Measurement{Unit: "degrees Celsius", init: 0x7F},
 		}
 
 		if activity.Sport.Name != SportTracking {
-			m["distance"] = &Measurement{Unit: "centimeter"}
-			m["vicenty_distance"] = &Measurement{Unit: "centimeter"}
+			m["distance"] = &Measurement{Unit: "centimeter", init: 0xFFFFFFFF}
+			m["vicenty_distance"] = &Measurement{Unit: "centimeter", init: 0xFFFFFFFF}
 		}
 
 		if activity.Sport.Sport == fit.SportCycling {
-			m["speed"] = &Measurement{Unit: "millimeter / second"}
+			m["speed"] = &Measurement{Unit: "millimeter / second", init: 0xFFFFFFFF}
 
 			// indicates erroneous mean cadence value of 255
 			if !(len(activity.Sessions) > 0 && activity.Sessions[0].AvgCadence == 255) {
-				m["cadence"] = &Measurement{Unit: "1 / minute"}
+				m["cadence"] = &Measurement{Unit: "1 / minute", init: 0xFF}
 			}
 		}
 
 		start := geodist.Coord{}
 		for i, record := range activity.Records {
 			// ignore max values; they're unset
-			if v, ok := m["heart_rate"]; ok && record.HeartRate < 0xFF {
-				v.Values = append(v.Values, float64(record.HeartRate))
+			if v, ok := m["heart_rate"]; ok {
+				v.values = append(v.values, float64(record.HeartRate))
 			}
-			if v, ok := m["temperature"]; ok && record.Temperature < 0x7F {
-				v.Values = append(v.Values, float64(record.Temperature))
+			if v, ok := m["temperature"]; ok {
+				v.values = append(v.values, float64(record.Temperature))
 			}
 			if v, ok := m["altitude"]; ok {
 				// altitude value requires scaling
 				altitude := record.GetEnhancedAltitudeScaled()
 				if !math.IsNaN(altitude) {
-					v.Values = append(v.Values, altitude)
+					v.values = append(v.values, altitude)
 				}
 			}
-			if v, ok := m["distance"]; ok && record.Distance < 0xFFFFFFFF {
-				v.Values = append(v.Values, float64(record.Distance))
+			if v, ok := m["distance"]; ok {
+				v.values = append(v.values, float64(record.Distance))
 			}
-			if v, ok := m["cadence"]; ok && record.Cadence < 0xFF {
-				v.Values = append(v.Values, float64(record.Cadence))
+			if v, ok := m["cadence"]; ok {
+				v.values = append(v.values, float64(record.Cadence))
 			}
-			if v, ok := m["speed"]; ok && record.EnhancedSpeed < 0xFFFFFFFF {
-				v.Values = append(v.Values, float64(record.EnhancedSpeed))
+			if v, ok := m["speed"]; ok {
+				v.values = append(v.values, float64(record.EnhancedSpeed))
 			}
 
 			// don't calculate max distance from start if no distance recorded
@@ -238,7 +246,7 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 			}
 			if v, ok := m["vicenty_distance"]; ok {
 				// convert v from kilometers to centimeters
-				v.Values = append(v.Values, dist*100000)
+				v.values = append(v.values, dist*100000)
 			}
 		}
 
@@ -251,11 +259,22 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 		for _, measurements := range correlates {
 			a, aok := m[measurements[0]]
 			b, bok := m[measurements[1]]
-			if !(aok && bok) || len(a.Values) == 0 || len(b.Values) == 0 {
+			if !(aok && bok) || len(a.values) == 0 || len(b.values) == 0 {
 				continue
 			}
 
-			correlation := stat.Correlation(a.Values, b.Values, nil)
+			// remove unset values
+			correlateA := make([]float64, 0, len(a.values))
+			correlateB := make([]float64, 0, len(b.values))
+			for i := range a.values {
+				if uint64(a.values[i]) == a.init || uint64(b.values[i]) == b.init {
+					continue
+				}
+				correlateA = append(correlateA, a.values[i])
+				correlateB = append(correlateB, b.values[i])
+			}
+
+			correlation := stat.Correlation(correlateA, correlateB, nil)
 			if math.IsNaN(correlation) {
 				continue
 			}
