@@ -190,10 +190,11 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 
 		start := geodist.Coord{}
 		for i, record := range activity.Records {
-			if v, ok := m["heart_rate"]; ok {
+			// ignore max values; they're unset
+			if v, ok := m["heart_rate"]; ok && record.HeartRate < 0xFF {
 				v.Values = append(v.Values, float64(record.HeartRate))
 			}
-			if v, ok := m["temperature"]; ok {
+			if v, ok := m["temperature"]; ok && record.Temperature < 0x7F {
 				v.Values = append(v.Values, float64(record.Temperature))
 			}
 			if v, ok := m["altitude"]; ok {
@@ -203,13 +204,13 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 					v.Values = append(v.Values, altitude)
 				}
 			}
-			if v, ok := m["distance"]; ok {
+			if v, ok := m["distance"]; ok && record.Distance < 0xFFFFFFFF {
 				v.Values = append(v.Values, float64(record.Distance))
 			}
-			if v, ok := m["cadence"]; ok {
+			if v, ok := m["cadence"]; ok && record.Cadence < 0xFF {
 				v.Values = append(v.Values, float64(record.Cadence))
 			}
-			if v, ok := m["speed"]; ok {
+			if v, ok := m["speed"]; ok && record.EnhancedSpeed < 0xFFFFFFFF {
 				v.Values = append(v.Values, float64(record.EnhancedSpeed))
 			}
 
