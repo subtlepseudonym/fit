@@ -29,7 +29,6 @@ CREATE TABLE %s
 	type varchar(64),
 	start_time timestamptz,
 	end_time timestamptz,
-	max_distance_from_start numeric(64, 32),
 	tags jsonb
 );
 
@@ -120,17 +119,14 @@ INSERT INTO %s
 	type,
 	start_time,
 	end_time,
-	max_distance_from_start,
 	tags
 ) VALUES (
-	'%s', %d, '%s', '%s', '%s',
-	%f, '%s'
+	'%s', %d, '%s', '%s', '%s', '%s'
 ) ON CONFLICT (hash)
 DO UPDATE SET
 	type = EXCLUDED.type,
 	start_time = EXCLUDED.start_time,
 	end_time = EXCLUDED.end_time,
-	max_distance_from_start = EXCLUDED.max_distance_from_start,
 	tags = EXCLUDED.tags
 RETURNING id;
 `
@@ -160,7 +156,6 @@ func buildActivityQuery(table string, summary *fitcmd.Summary) (string, error) {
 		summary.Type,
 		summary.StartTime.Format(time.RFC3339),
 		summary.EndTime.Format(time.RFC3339),
-		summary.MaxDistanceFromStart,
 		tags,
 	), nil
 }

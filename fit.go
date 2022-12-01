@@ -45,13 +45,12 @@ var sportToType map[string]string = map[string]string{
 }
 
 type Summary struct {
-	Type                 string            `json:"type"`
-	StartTime            time.Time         `json:"start_time"`
-	EndTime              time.Time         `json:"end_time"`
-	MaxDistanceFromStart float64           `json:"max_distance_from_start"`
-	Measurements         []*Measurement    `json:"measurements" hash:"ignore"`
-	Correlations         []*Correlation    `json:"correlations" hash:"ignore"`
-	Tags                 map[string]string `json:"tags" hash:"ignore"`
+	Type         string            `json:"type"`
+	StartTime    time.Time         `json:"start_time"`
+	EndTime      time.Time         `json:"end_time"`
+	Measurements []*Measurement    `json:"measurements" hash:"ignore"`
+	Correlations []*Correlation    `json:"correlations" hash:"ignore"`
+	Tags         map[string]string `json:"tags" hash:"ignore"`
 }
 
 type Measurement struct {
@@ -177,6 +176,7 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 
 		if activity.Sport.Name != SportTracking {
 			m["distance"] = &Measurement{Unit: "centimeter"}
+			m["vicenty_distance"] = &Measurement{Unit: "centimeter"}
 		}
 
 		if activity.Sport.Sport == fit.SportCycling {
@@ -230,12 +230,14 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 				continue
 			}
 
+			// calculate Vicenty distance from first recorded position
 			_, dist, err := geodist.VincentyDistance(start, pos)
 			if err != nil {
 				continue
 			}
-			if dist > summary.MaxDistanceFromStart {
-				summary.MaxDistanceFromStart = dist
+			if v, ok := m["vicenty_distance"]; ok {
+				// convert v to centimeters
+				v.Values = append(v.Values, dist*1000)
 			}
 		}
 
