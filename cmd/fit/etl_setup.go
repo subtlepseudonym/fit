@@ -18,6 +18,8 @@ func NewETLSetupCommand() *cobra.Command {
 		RunE:  etlSetup,
 	}
 
+	cmd.Flags().Bool("no-influx", false, "Exclude influxdb from setup")
+
 	return cmd
 }
 
@@ -53,6 +55,23 @@ func etlSetup(cmd *cobra.Command, args []string) (ret error) {
 		return fmt.Errorf("setup query: %w", err)
 	}
 
+	if noInflux, _ := flags.GetBool("no-influx"); !noInflux {
+		err = setupInflux(cmd, args)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("commit sql: %w", err)
+	}
+
+	return nil
+}
+
+func setupInflux(cmd *cobra.Command, args []string) error {
+	flags := cmd.Flags()
 	influxHost, _ := flags.GetString("influx_host")
 	influxToken, _ := flags.GetString("influx_token")
 	influxOrg, _ := flags.GetString("influx_org")
@@ -72,11 +91,6 @@ func etlSetup(cmd *cobra.Command, args []string) (ret error) {
 	_, err = client.BucketsAPI().CreateBucketWithName(context.Background(), org, influxBucket)
 	if err != nil {
 		return fmt.Errorf("influx create bucket %w", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("commit sql: %w", err)
 	}
 
 	return nil
