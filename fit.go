@@ -180,7 +180,7 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 		}
 
 		if activity.Sport.Sport == fit.SportCycling {
-			m["speed"] = &Measurement{Unit: "centimeter / second"}
+			m["speed"] = &Measurement{Unit: "millimeter / second"}
 
 			// indicates erroneous mean cadence value of 255
 			if !(len(activity.Sessions) > 0 && activity.Sessions[0].AvgCadence == 255) {
