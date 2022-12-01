@@ -236,8 +236,8 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 				continue
 			}
 			if v, ok := m["vicenty_distance"]; ok {
-				// convert v to centimeters
-				v.Values = append(v.Values, dist*1000)
+				// convert v from kilometers to centimeters
+				v.Values = append(v.Values, dist*100000)
 			}
 		}
 
