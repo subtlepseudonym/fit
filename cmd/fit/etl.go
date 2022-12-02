@@ -32,17 +32,17 @@ func NewETLCommand() *cobra.Command {
 
 	persistent := cmd.PersistentFlags()
 	persistent.String("postgres", "", "Postgres DSN")
-	persistent.String("postgres_activity_table", "activity", "Postgres table")
-	persistent.String("postgres_measurement_table", "measurement", "Postgres table")
-	persistent.String("postgres_correlation_table", "correlation", "Postgres table")
-	persistent.String("influx_host", "", "InfluxDB DSN")
-	persistent.String("influx_token", "", "InfluxDB API token")
-	persistent.String("influx_org", "default", "InfluxDB organization")
-	persistent.String("influx_bucket", "fit", "InfluxDB bucket")
+	persistent.String("postgres-activity-table", "activity", "Postgres table")
+	persistent.String("postgres-measurement-table", "measurement", "Postgres table")
+	persistent.String("postgres-correlation-table", "correlation", "Postgres table")
+	persistent.String("influx-host", "", "InfluxDB DSN")
+	persistent.String("influx-token", "", "InfluxDB API token")
+	persistent.String("influx-org", "default", "InfluxDB organization")
+	persistent.String("influx-bucket", "fit", "InfluxDB bucket")
 
 	cmd.MarkPersistentFlagRequired("postgres")
-	cmd.MarkFlagRequired("influx_host")
-	cmd.MarkFlagRequired("influx_token")
+	cmd.MarkFlagRequired("influx-host")
+	cmd.MarkFlagRequired("influx-token")
 
 	cmd.AddCommand(NewETLSetupCommand())
 
@@ -65,10 +65,10 @@ func etlAll(cmd *cobra.Command, args []string) error {
 	}
 
 	// set up influx client
-	influxHost, _ := flags.GetString("influx_host")
-	influxToken, _ := flags.GetString("influx_token")
-	influxOrg, _ := flags.GetString("influx_org")
-	influxBucket, _ := flags.GetString("influx_bucket")
+	influxHost, _ := flags.GetString("influx-host")
+	influxToken, _ := flags.GetString("influx-token")
+	influxOrg, _ := flags.GetString("influx-org")
+	influxBucket, _ := flags.GetString("influx-bucket")
 
 	options := influxdb2.DefaultOptions()
 	options.SetPrecision(time.Second)
@@ -125,9 +125,9 @@ func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filenam
 	}()
 
 	flags := cmd.Flags()
-	activityTable, _ := flags.GetString("postgres_activity_table")
-	measurementTable, _ := flags.GetString("postgres_measurement_table")
-	correlationTable, _ := flags.GetString("postgres_correlation_table")
+	activityTable, _ := flags.GetString("postgres-activity-table")
+	measurementTable, _ := flags.GetString("postgres-measurement-table")
+	correlationTable, _ := flags.GetString("postgres-correlation-table")
 
 	activityQuery, err := buildActivityQuery(activityTable, summary)
 	if err != nil {
