@@ -40,9 +40,9 @@ func NewETLCommand() *cobra.Command {
 	persistent.String("influx_org", "default", "InfluxDB organization")
 	persistent.String("influx_bucket", "fit", "InfluxDB bucket")
 
-	cobra.MarkFlagRequired(persistent, "postgres")
-	cobra.MarkFlagRequired(persistent, "influx_host")
-	cobra.MarkFlagRequired(persistent, "influx_token")
+	cmd.MarkPersistentFlagRequired("postgres")
+	cmd.MarkFlagRequired("influx_host")
+	cmd.MarkFlagRequired("influx_token")
 
 	cmd.AddCommand(NewETLSetupCommand())
 
