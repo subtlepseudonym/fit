@@ -291,14 +291,6 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 	return nil, fmt.Errorf("unknown file type: %d", data.Type())
 }
 
-func degToRad(degrees float64) float64 {
-	ret := big.NewFloat(degrees)
-	ret = ret.Mul(ret, big.NewFloat(math.Pi))
-	ret = ret.Quo(ret, big.NewFloat(180))
-	val, _ := ret.Float64()
-	return val
-}
-
 func WriteLineProtocol(out io.Writer, data *fit.File, tags map[string]string) error {
 	switch data.Type() {
 	case fit.FileTypeActivity:
