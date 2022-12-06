@@ -191,14 +191,13 @@ func Summarize(data *fit.File, correlates [][2]string, tags map[string]string) (
 			m["speed"] = &Measurement{Unit: "millimeter / second", init: 0xFFFFFFFF}
 
 			// indicates erroneous mean cadence value of 255
-			if !(len(activity.Sessions) > 0 && activity.Sessions[0].AvgCadence == 255) {
+			if !(len(activity.Sessions) > 0 && activity.Sessions[0].AvgCadence == 0xFF) {
 				m["cadence"] = &Measurement{Unit: "1 / minute", init: 0xFF}
 			}
 		}
 
 		start := geodist.Coord{}
 		for i, record := range activity.Records {
-			// ignore max values; they're unset
 			if v, ok := m["heart_rate"]; ok {
 				v.values = append(v.values, float64(record.HeartRate))
 			}
