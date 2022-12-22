@@ -26,9 +26,9 @@ func NewETLSetupCommand() *cobra.Command {
 func etlSetup(cmd *cobra.Command, args []string) (ret error) {
 	flags := cmd.Flags()
 	postgresDSN, _ := flags.GetString("postgres")
-	activityTable, _ := flags.GetString("postgres_activity_table")
-	measurementTable, _ := flags.GetString("postgres_measurement_table")
-	correlationTable, _ := flags.GetString("postgres_correlation_table")
+	activityTable, _ := flags.GetString("postgres-activity-table")
+	measurementTable, _ := flags.GetString("postgres-measurement-table")
+	correlationTable, _ := flags.GetString("postgres-correlation-table")
 
 	db, err := sql.Open("postgres", postgresDSN)
 	if err != nil {
