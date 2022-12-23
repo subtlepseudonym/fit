@@ -106,7 +106,7 @@ func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filenam
 		return fmt.Errorf("decode: %w", err)
 	}
 
-	summary, err := fitcmd.Summarize(data, DefaultCorrelates, tags)
+	activity, err := fitcmd.Summarize(data, DefaultMeasurements, DefaultCorrelates, tags)
 	if err != nil {
 		return fmt.Errorf("summarize: %w", err)
 	}
@@ -129,7 +129,7 @@ func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filenam
 	measurementTable, _ := flags.GetString("postgres-measurement-table")
 	correlationTable, _ := flags.GetString("postgres-correlation-table")
 
-	activityQuery, err := buildActivityQuery(activityTable, summary)
+	activityQuery, err := buildActivityQuery(activityTable, activity)
 	if err != nil {
 		return fmt.Errorf("build activity query: %w", err)
 	}
@@ -140,7 +140,7 @@ func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filenam
 		return fmt.Errorf("insert activity: %w", err)
 	}
 
-	queries, err := buildQueries(measurementTable, correlationTable, activityID, summary)
+	queries, err := buildQueries(measurementTable, correlationTable, activityID, activity)
 	if err != nil {
 		return fmt.Errorf("build measurement and correlation queries: %w", err)
 	}

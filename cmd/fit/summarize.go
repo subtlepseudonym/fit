@@ -11,10 +11,21 @@ import (
 	fit "github.com/subtlepseudonym/fit-go"
 )
 
+var DefaultMeasurements = []string{
+	"altitude",
+	"cadence",
+	"distance",
+	"heart_rate",
+	"moving_speed",
+	"speed",
+	"temperature",
+	"vicenty_distance",
+}
+
 var DefaultCorrelates = [][2]string{
-	[2]string{"heart_rate", "cadence"},
-	[2]string{"heart_rate", "speed"},
+	[2]string{"cadence", "heart_rate"},
 	[2]string{"cadence", "speed"},
+	[2]string{"heart_rate", "speed"},
 }
 
 func NewSummarizeCommand() *cobra.Command {
@@ -51,12 +62,12 @@ func summarize(cmd *cobra.Command, args []string) error {
 			"device": device,
 		}
 
-		summary, err := fitcmd.Summarize(data, DefaultCorrelates, tags)
+		activity, err := fitcmd.Summarize(data, DefaultMeasurements, DefaultCorrelates, tags)
 		if err != nil {
 			return fmt.Errorf("summarize: %w", err)
 		}
 
-		b, err := json.Marshal(summary)
+		b, err := json.Marshal(activity)
 		if err != nil {
 			return fmt.Errorf("json marshal: %w", err)
 		}

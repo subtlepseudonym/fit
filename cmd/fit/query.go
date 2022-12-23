@@ -131,19 +131,19 @@ DO UPDATE SET
 RETURNING id;
 `
 
-func buildActivityQuery(table string, summary *fitcmd.Summary) (string, error) {
+func buildActivityQuery(table string, activity *fitcmd.Activity) (string, error) {
 	scruGenerator := scru128.NewGenerator()
 	activityID, err := scruGenerator.Generate()
 	if err != nil {
 		return "", fmt.Errorf("generate activity ID: %w", err)
 	}
 
-	summaryHash, err := hashstructure.Hash(summary, nil)
+	hash, err := hashstructure.Hash(activity, nil)
 	if err != nil {
-		return "", fmt.Errorf("hash summary: %w", err)
+		return "", fmt.Errorf("hash activity: %w", err)
 	}
 
-	tags, err := json.Marshal(summary.Tags)
+	tags, err := json.Marshal(activity.Tags)
 	if err != nil {
 		return "", fmt.Errorf("marshal json tags: %w", err)
 	}
@@ -152,10 +152,10 @@ func buildActivityQuery(table string, summary *fitcmd.Summary) (string, error) {
 		insertActivityFormat,
 		table,
 		activityID,
-		int64(summaryHash),
-		summary.Type,
-		summary.StartTime.Format(time.RFC3339),
-		summary.EndTime.Format(time.RFC3339),
+		int64(hash),
+		activity.Type,
+		activity.StartTime.Format(time.RFC3339),
+		activity.EndTime.Format(time.RFC3339),
 		tags,
 	), nil
 }
@@ -206,11 +206,11 @@ DO UPDATE SET
 	correlation = EXCLUDED.correlation;
 `
 
-func buildQueries(measurementTable, correlationTable, activityID string, summary *fitcmd.Summary) ([]string, error) {
+func buildQueries(measurementTable, correlationTable, activityID string, activity *fitcmd.Activity) ([]string, error) {
 	scruGenerator := scru128.NewGenerator()
-	queries := make([]string, 0, len(summary.Measurements)+len(summary.Correlations))
+	queries := make([]string, 0, len(activity.Measurements)+len(activity.Correlations))
 
-	for _, m := range summary.Measurements {
+	for _, m := range activity.Measurements {
 		id, err := scruGenerator.Generate()
 		if err != nil {
 			return nil, fmt.Errorf("generate scru ID: %w", err)
@@ -232,7 +232,7 @@ func buildQueries(measurementTable, correlationTable, activityID string, summary
 		))
 	}
 
-	for _, c := range summary.Correlations {
+	for _, c := range activity.Correlations {
 		id, err := scruGenerator.Generate()
 		if err != nil {
 			return nil, fmt.Errorf("generate scru ID: %w", err)
