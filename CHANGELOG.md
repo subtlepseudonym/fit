@@ -12,6 +12,7 @@
 
 ### Fixed
 - Makefile bug for generating automatic versioning
+- Fixed panic when activity doesn't container sport information
 
 ## [0.1.0] - 2022-10-04
 ### Added

@@ -44,6 +44,9 @@ func Type(data *fit.File) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("activity: %w", err)
 		}
+		if activity.Sport == nil {
+			return TypeUnknown, nil
+		}
 		if t, ok := sportToType[activity.Sport.Name]; ok {
 			return t, nil
 		} else {
