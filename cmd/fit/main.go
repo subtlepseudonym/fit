@@ -18,6 +18,7 @@ func main() {
 
 	root.AddCommand(NewDumpCommand())
 	root.AddCommand(NewETLCommand())
+	root.AddCommand(NewInspectCommand())
 	root.AddCommand(NewLineCommand())
 	root.AddCommand(NewSummarizeCommand())
 	root.AddCommand(NewTypeCommand())
