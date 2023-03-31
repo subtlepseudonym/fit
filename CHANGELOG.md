@@ -5,6 +5,7 @@
 - Command 'summarize' for calculating record aggregates
 - Command 'etl' for writing summary to postgres and records to influx
 - Command 'etl setup' for setting up expected databases / schema
+- Command 'inspect' for inspecting populated activity record fields
 
 ### Changed
 - Reorganized repo into an importable package
