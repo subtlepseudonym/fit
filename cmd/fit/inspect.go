@@ -71,7 +71,13 @@ func inspect(cmd *cobra.Command, args []string) error {
 					if field.CanUint() {
 						u := field.Uint()
 						bits := field.Type().Bits()
-						if u == uint64(1<<bits-1) {
+						if u == uint64(1<<bits)-1 {
+							continue
+						}
+					} else if field.CanInt() {
+						i := field.Int()
+						bits := field.Type().Bits()
+						if i == int64(1<<bits)/2-1 {
 							continue
 						}
 					}
