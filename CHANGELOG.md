@@ -4,6 +4,9 @@
 ### Added
 - Tag line recordes and summary if file checksum is ignored
 
+### Fixed
+- Line protocol requires tags to be added in lexical order
+
 ## [0.2.0] - 2023-04-03
 ### Added
 - Command 'summarize' for calculating record aggregates

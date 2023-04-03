@@ -3,6 +3,7 @@ package fit
 import (
 	"fmt"
 	"io"
+	"sort"
 
 	lp "github.com/influxdata/line-protocol/v2/lineprotocol"
 	"github.com/subtlepseudonym/fit-go"
@@ -120,6 +121,13 @@ func WriteLineProtocol(out io.Writer, data *fit.File, tags map[string]string) er
 			}
 		}
 
+		// Line protocol requires tags to be added in lexical order
+		tagKeys := make([]string, 0, len(tags))
+		for key, _ := range tags {
+			tagKeys = append(tagKeys, key)
+		}
+		sort.Strings(tagKeys)
+
 		var encoder lp.Encoder
 		encoder.SetPrecision(lp.Second)
 
@@ -128,8 +136,8 @@ func WriteLineProtocol(out io.Writer, data *fit.File, tags map[string]string) er
 		for _, record := range activity.Records {
 			encoder.StartLine(fitType)
 
-			for tag, value := range tags {
-				encoder.AddTag(tag, value)
+			for _, key := range tagKeys {
+				encoder.AddTag(key, tags[key])
 			}
 
 			acc, err = ReadRecord(acc, record, encode)
