@@ -16,6 +16,8 @@ func main() {
 		SilenceUsage: true,
 	}
 
+	root.PersistentFlags().Bool("ignore-file-checksum", false, "Ignore file integrity checksum")
+
 	root.AddCommand(NewDumpCommand())
 	root.AddCommand(NewETLCommand())
 	root.AddCommand(NewInspectCommand())

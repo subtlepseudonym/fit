@@ -6,6 +6,7 @@
 - Command 'etl' for writing summary to postgres and records to influx
 - Command 'etl setup' for setting up expected databases / schema
 - Command 'inspect' for inspecting populated activity record fields
+- Add flag for ignoring file checksum check
 
 ### Changed
 - Reorganized repo into an importable package

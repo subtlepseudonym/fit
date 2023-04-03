@@ -42,7 +42,11 @@ func line(cmd *cobra.Command, args []string) error {
 
 		data, err := fit.Decode(file)
 		if err != nil {
-			return fmt.Errorf("decode: %w", err)
+			ignore, _ := cmd.Flags().GetBool("ignore-file-checksum")
+			_, ok := err.(fit.IntegrityError)
+			if !ignore || !ok {
+				return fmt.Errorf("decode: %w", err)
+			}
 		}
 
 		lineFile := fmt.Sprintf("%s.line", strings.TrimSuffix(path.Base(file.Name()), path.Ext(file.Name())))
