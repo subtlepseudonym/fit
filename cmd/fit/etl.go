@@ -81,6 +81,10 @@ func etlAll(cmd *cobra.Command, args []string) error {
 		"device": device,
 	}
 
+	if ignore, _ := cmd.Flags().GetBool("ignore-file-checksum"); ignore {
+		tags["ignore-file-checksum"] = "true"
+	}
+
 	for _, arg := range args {
 		err = etl(cmd, db, influxAPI, arg, tags)
 		if err != nil {

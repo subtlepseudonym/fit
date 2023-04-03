@@ -65,6 +65,10 @@ func line(cmd *cobra.Command, args []string) error {
 			"device": device,
 		}
 
+		if ignore, _ := cmd.Flags().GetBool("ignore-file-checksum"); ignore {
+			tags["ignore-file-checksum"] = "true"
+		}
+
 		err = fitcmd.WriteLineProtocol(output, data, tags)
 		if err != nil {
 			return fmt.Errorf("write line protocol: %w", err)

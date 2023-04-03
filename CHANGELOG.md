@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.1] -
+### Added
+- Tag line recordes and summary if file checksum is ignored
+
 ## [0.2.0] - 2023-04-03
 ### Added
 - Command 'summarize' for calculating record aggregates

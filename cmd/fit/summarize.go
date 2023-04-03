@@ -66,6 +66,10 @@ func summarize(cmd *cobra.Command, args []string) error {
 			"device": device,
 		}
 
+		if ignore, _ := cmd.Flags().GetBool("ignore-file-checksum"); ignore {
+			tags["ignore-file-checksum"] = "true"
+		}
+
 		activity, err := fitcmd.Summarize(data, DefaultMeasurements, DefaultCorrelates, tags)
 		if err != nil {
 			return fmt.Errorf("summarize: %w", err)
