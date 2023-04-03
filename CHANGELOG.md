@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0] -
+## [0.2.0] - 2023-04-03
 ### Added
 - Command 'summarize' for calculating record aggregates
 - Command 'etl' for writing summary to postgres and records to influx
