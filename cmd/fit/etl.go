@@ -32,9 +32,10 @@ func NewETLCommand() *cobra.Command {
 
 	persistent := cmd.PersistentFlags()
 	persistent.String("postgres", "", "Postgres DSN")
-	persistent.String("postgres-activity-table", "activity", "Postgres table")
-	persistent.String("postgres-measurement-table", "measurement", "Postgres table")
-	persistent.String("postgres-correlation-table", "correlation", "Postgres table")
+	persistent.String("postgres-import-table", "import", "Table name for import run information")
+	persistent.String("postgres-activity-table", "activity", "Table name for activity records")
+	persistent.String("postgres-measurement-table", "measurement", "Table name for per-activity measurement records")
+	persistent.String("postgres-correlation-table", "correlation", "Table for measurement correlation records")
 	persistent.String("influx-host", "", "InfluxDB DSN")
 	persistent.String("influx-token", "", "InfluxDB API token")
 	persistent.String("influx-org", "default", "InfluxDB organization")
@@ -85,20 +86,38 @@ func etlAll(cmd *cobra.Command, args []string) error {
 		tags["ignore-file-checksum"] = "true"
 	}
 
+	importTable, _ := flags.GetString("postgres-import-table")
+	importID, err := insertImport(db, importTable, time.Now(), device)
+	if err != nil {
+		return fmt.Errorf("insert import record: %w", err)
+	}
+
+	var files []string
+	var errors []string
+	verbose, _ := flags.GetBool("verbose")
 	for _, arg := range args {
-		err = etl(cmd, db, influxAPI, arg, tags)
+		files = append(files, path.Base(arg))
+		err = etl(cmd, db, influxAPI, arg, importID, tags)
 		if err != nil {
-			return fmt.Errorf("etl: %q: %w", arg, err)
+			errors = append(errors, fmt.Sprintf("etl: %s: %s", arg, err))
 		}
-		if verbose, _ := flags.GetBool("verbose"); verbose {
+		if verbose {
 			fmt.Println(path.Base(arg))
 		}
+	}
+
+	err = updateImport(db, importTable, importID, time.Now(), files, errors)
+	if err != nil {
+		return fmt.Errorf("update import record: %s: %w", importID, err)
+	}
+	if verbose {
+		fmt.Println("import ID:", importID)
 	}
 
 	return nil
 }
 
-func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filename string, tags map[string]string) (ret error) {
+func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filename, importID string, tags map[string]string) (ret error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("open: %w", err)
@@ -137,7 +156,7 @@ func etl(cmd *cobra.Command, db *sql.DB, influxAPI api.WriteAPIBlocking, filenam
 	measurementTable, _ := flags.GetString("postgres-measurement-table")
 	correlationTable, _ := flags.GetString("postgres-correlation-table")
 
-	activityQuery, err := buildActivityQuery(activityTable, activity)
+	activityQuery, err := buildActivityQuery(activityTable, activity, importID)
 	if err != nil {
 		return fmt.Errorf("build activity query: %w", err)
 	}

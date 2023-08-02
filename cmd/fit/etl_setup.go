@@ -26,6 +26,7 @@ func NewETLSetupCommand() *cobra.Command {
 func etlSetup(cmd *cobra.Command, args []string) (ret error) {
 	flags := cmd.Flags()
 	postgresDSN, _ := flags.GetString("postgres")
+	importTable, _ := flags.GetString("postgres-import-table")
 	activityTable, _ := flags.GetString("postgres-activity-table")
 	measurementTable, _ := flags.GetString("postgres-measurement-table")
 	correlationTable, _ := flags.GetString("postgres-correlation-table")
@@ -49,7 +50,7 @@ func etlSetup(cmd *cobra.Command, args []string) (ret error) {
 		}
 	}()
 
-	setupQuery := buildSetupQuery(activityTable, measurementTable, correlationTable)
+	setupQuery := buildSetupQuery(importTable, activityTable, measurementTable, correlationTable)
 	_, err = tx.Exec(setupQuery)
 	if err != nil {
 		return fmt.Errorf("setup query: %w", err)
@@ -72,10 +73,10 @@ func etlSetup(cmd *cobra.Command, args []string) (ret error) {
 
 func setupInflux(cmd *cobra.Command, args []string) error {
 	flags := cmd.Flags()
-	influxHost, _ := flags.GetString("influx_host")
-	influxToken, _ := flags.GetString("influx_token")
-	influxOrg, _ := flags.GetString("influx_org")
-	influxBucket, _ := flags.GetString("influx_bucket")
+	influxHost, _ := flags.GetString("influx-host")
+	influxToken, _ := flags.GetString("influx-token")
+	influxOrg, _ := flags.GetString("influx-org")
+	influxBucket, _ := flags.GetString("influx-bucket")
 
 	options := influxdb2.DefaultOptions()
 	options.SetPrecision(time.Second)
@@ -88,9 +89,16 @@ func setupInflux(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("influx get org: %w", err)
 	}
 
-	_, err = client.BucketsAPI().CreateBucketWithName(context.Background(), org, influxBucket)
+	bucket, err := client.BucketsAPI().FindBucketByName(context.Background(), influxBucket)
 	if err != nil {
-		return fmt.Errorf("influx create bucket %w", err)
+		return fmt.Errorf("influx find bucket: %w", err)
+	}
+
+	if bucket == nil {
+		_, err = client.BucketsAPI().CreateBucketWithName(context.Background(), org, influxBucket)
+		if err != nil {
+			return fmt.Errorf("influx create bucket: %w", err)
+		}
 	}
 
 	return nil
