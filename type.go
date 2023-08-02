@@ -7,17 +7,19 @@ import (
 )
 
 const (
-	TypeUnknown    = "unknown"
-	TypeMonitoring = "monitor"          // only non-sport type
 	SportTracking  = "All-Day Tracking" // Sport value for tracking activity
+	TypeCycling    = "cycle"
+	TypeMonitoring = "monitor" // only non-sport type
+	TypeTracking   = "track"
+	TypeUnknown    = "unknown"
 )
 
 // Use Sport.Name mapping to capture custom activities
 var sportToType map[string]string = map[string]string{
-	SportTracking:       "track",
+	SportTracking:       TypeTracking,
 	"American Football": "football",
 	"Basketball":        "basketball",
-	"Bike":              "cycle",
+	"Bike":              TypeCycling,
 	"Cooldown":          "cooldown",
 	"Hike":              "hike",
 	"Ice Skate":         "iceskate",
@@ -57,6 +59,9 @@ func Type(data *fit.File) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("sport: %w", err)
 		}
+		if sport.Sport == nil {
+			return TypeUnknown, nil
+		}
 		if t, ok := sportToType[sport.Sport.Name]; ok {
 			return t, nil
 		} else {
@@ -66,5 +71,5 @@ func Type(data *fit.File) (string, error) {
 		return TypeMonitoring, nil
 	}
 
-	return "", fmt.Errorf("file type unknown")
+	return TypeUnknown, fmt.Errorf("file type unknown")
 }

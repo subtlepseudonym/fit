@@ -96,26 +96,26 @@ func EncodeFunc(encoder *lp.Encoder, measurements map[string]struct{}) AddFunc {
 func WriteLineProtocol(out io.Writer, data *fit.File, tags map[string]string) error {
 	switch data.Type() {
 	case fit.FileTypeActivity:
-		activity, err := data.Activity()
+		fitType, err := Type(data)
 		if err != nil {
-			return fmt.Errorf("activity: %w", err)
+			return fmt.Errorf("type: %w", err)
 		}
 
-		fitType := TypeUnknown
-		if t, ok := sportToType[activity.Sport.Name]; ok {
-			fitType = t
+		activityData, err := data.Activity()
+		if err != nil {
+			return fmt.Errorf("activity: %w", err)
 		}
 
 		measurements := make(map[string]struct{})
 		for m := range DefaultMeasurements {
 			measurements[m] = struct{}{}
 		}
-		if fitType != TypeMonitoring && activity.Sport.Name != SportTracking {
+		if fitType != TypeMonitoring && fitType != TypeTracking {
 			for m := range DefaultSportMeasurements {
 				measurements[m] = struct{}{}
 			}
 		}
-		if activity.Sport.Sport == fit.SportCycling {
+		if fitType == TypeCycling {
 			for m := range DefaultCyclingMeasurements {
 				measurements[m] = struct{}{}
 			}
@@ -133,7 +133,7 @@ func WriteLineProtocol(out io.Writer, data *fit.File, tags map[string]string) er
 
 		encode := EncodeFunc(&encoder, measurements)
 		acc := new(Accumulator)
-		for _, record := range activity.Records {
+		for _, record := range activityData.Records {
 			encoder.StartLine(fitType)
 
 			for _, key := range tagKeys {

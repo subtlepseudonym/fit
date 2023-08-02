@@ -126,19 +126,19 @@ func (a *Activity) AddValue(key string, value interface{}) {
 func Summarize(data *fit.File, measures []string, correlates [][2]string, tags map[string]string) (*Activity, error) {
 	switch data.Type() {
 	case fit.FileTypeActivity:
+		fitType, err := Type(data)
+		if err != nil {
+			return nil, fmt.Errorf("type: %w", err)
+		}
+
 		activityData, err := data.Activity()
 		if err != nil {
 			return nil, fmt.Errorf("activity: %w", err)
 		}
 
-		fitType := TypeUnknown
-		if t, ok := sportToType[activityData.Sport.Name]; ok {
-			fitType = t
-		}
-
 		lastIdx := len(activityData.Records) - 1
 		if lastIdx < 0 {
-			lastIdx = 0
+			return nil, fmt.Errorf("file contains no records")
 		}
 
 		activity := &Activity{
@@ -155,13 +155,13 @@ func Summarize(data *fit.File, measures []string, correlates [][2]string, tags m
 			activity.mmap[name] = NewMeasurement(name, m.Unit, m.Unset)
 		}
 
-		if activity.Type != TypeMonitoring && activity.Type != sportToType[SportTracking] {
+		if activity.Type != TypeMonitoring && activity.Type != TypeTracking {
 			for name, m := range DefaultSportMeasurements {
 				activity.mmap[name] = NewMeasurement(name, m.Unit, m.Unset)
 			}
 		}
 
-		if activityData.Sport.Sport == fit.SportCycling {
+		if activity.Type == TypeCycling {
 			for name, m := range DefaultCyclingMeasurements {
 				activity.mmap[name] = NewMeasurement(name, m.Unit, m.Unset)
 			}
