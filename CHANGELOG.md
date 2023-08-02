@@ -1,8 +1,21 @@
 # Changelog
 
-## [0.2.1] -
+## [0.3.0] - 2023-08-01
 ### Added
-- Tag line recordes and summary if file checksum is ignored
+- Postgres table definition for import run information
+- Foreign keys on activity records referencing import table
+
+### Changed
+- Silently skip bucket creation if bucket exists in 'etl setup'
+- Return "unknown" for type when basic fit file type is unknown
+
+### Fixed
+- Reading connection strings from flags in 'etl setup'
+- Nil pointer dereference when ETLing activities without sport data
+
+## [0.2.1] - 2023-04-03
+### Added
+- Tag line records and summary if file checksum is ignored
 
 ### Fixed
 - Line protocol requires tags to be added in lexical order
